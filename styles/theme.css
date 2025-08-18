@@ -1,0 +1,68 @@
+:root {
+  --brand-start: 222 92% 61%; /* 蓝 */
+  --brand-end: 291 76% 61%;  /* 紫 */
+  --accent-start: 20 100% 60%; /* 橙 */
+  --accent-end: 340 82% 60%;  /* 粉 */
+  --shadow-soft: 0 10px 20px rgba(0,0,0,0.06);
+  --shadow-hover: 0 16px 32px rgba(0,0,0,0.10);
+}
+
+.bg-gradient-brand {
+  background: linear-gradient(135deg, hsl(var(--brand-start)) 0%, hsl(var(--brand-end)) 100%);
+}
+.bg-gradient-accent {
+  background: linear-gradient(135deg, hsl(var(--accent-start)) 0%, hsl(var(--accent-end)) 100%);
+}
+.shadow-soft { box-shadow: var(--shadow-soft); }
+.shadow-hover { box-shadow: var(--shadow-hover); }
+
+.hover-scale-shadow { transition: transform .2s ease, box-shadow .2s ease; }
+.hover-scale-shadow:hover { transform: translateY(-2px) scale(1.03); box-shadow: var(--shadow-hover); }
+
+/* 渐变边框闪动 */
+@keyframes gradientShift {
+  0% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
+}
+.gradient-border {
+  position: relative;
+  border-radius: 12px;
+}
+.gradient-border::before {
+  content: "";
+  position: absolute; inset: -1px;
+  z-index: -1; border-radius: inherit;
+  background: linear-gradient(90deg, hsl(var(--brand-start)), hsl(var(--brand-end)), hsl(var(--accent-start)), hsl(var(--accent-end)));
+  background-size: 300% 300%;
+  animation: gradientShift 4s ease infinite;
+}
+
+/* Ripple 点击波纹（居中） */
+@keyframes rippleScale {
+  from { transform: scale(0); opacity: .4; }
+  to { transform: scale(2.5); opacity: 0; }
+}
+.ripple { position: relative; overflow: hidden; }
+.ripple:after {
+  content: ""; position: absolute; inset: 0; margin: auto; width: 20px; height: 20px;
+  background: rgba(255,255,255,.6); border-radius: 9999px; transform: scale(0);
+}
+.ripple:active:after { animation: rippleScale .5s ease-out; }
+
+/* Shimmer 骨架屏渐变闪烁 */
+@keyframes shimmer {
+  0% { background-position: -450px 0; }
+  100% { background-position: 450px 0; }
+}
+.animate-shimmer {
+  background: linear-gradient(90deg, rgba(0,0,0,0.06) 25%, rgba(0,0,0,0.12) 37%, rgba(0,0,0,0.06) 63%);
+  background-size: 800px 104px;
+  animation: shimmer 1.25s linear infinite;
+}
+
+/* 渐变按钮 */
+.btn-gradient { color: white; }
+.btn-gradient.brand { background-image: linear-gradient(135deg, hsl(var(--brand-start)), hsl(var(--brand-end))); }
+.btn-gradient.accent { background-image: linear-gradient(135deg, hsl(var(--accent-start)), hsl(var(--accent-end))); }
+.btn-gradient:hover { filter: brightness(1.05); } 
