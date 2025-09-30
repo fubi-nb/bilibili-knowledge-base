@@ -68,11 +68,11 @@ npm run dev
 
 ### 环境变量（.env.local）
 ```bash
-NEXT_PUBLIC_AI_API_KEY=你的火山方舟APIKey
-NEXT_PUBLIC_AI_API_ENDPOINT=https://ark.cn-beijing.volces.com/api/v3/chat/completions
-NEXT_PUBLIC_AI_MODEL=doubao-1.5-vision-pro-32k
+AI_API_KEY=你的火山方舟APIKey # 仅服务器可读
+AI_API_ENDPOINT=https://ark.cn-beijing.volces.com/api/v3/chat/completions
+AI_MODEL=doubao-1.5-vision-pro-32k
 ```
-说明：未配置 `API_KEY` 或 `API_ENDPOINT` 时，后端 `/api/ai-summary` 会返回示例结果；前端也会在失败时回退占位内容，保证演示可用性。
+说明：未配置 `AI_API_KEY` 或 `AI_API_ENDPOINT` 时，后端 `/api/ai-summary` 会返回示例结果；前端也会在失败时回退占位内容，保证演示可用性。密钥通过服务端代理转发，不会下发到浏览器。
 
 ## AI 接入与“视频理解”注意事项（重要）
 - 后端 `/api/ai-summary` 遵循 Doubao 的“视频理解”输入：
