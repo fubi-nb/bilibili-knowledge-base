@@ -23,10 +23,25 @@ export default function Detail() {
   }
 
   const jumpToTime = (time: string) => {
-    const [mm, ss] = time.split(":" ).map((n) => parseInt(n, 10));
-    const seconds = (mm || 0) * 60 + (ss || 0);
-    const url = `${video.source}?t=${seconds}`;
-    window.open(url, "_blank");
+    const [mm = "0", ss = "0"] = time.split(":");
+    const toPositiveInt = (value: string) => {
+      const parsed = Number.parseInt(value, 10);
+      if (Number.isNaN(parsed) || parsed < 0) return 0;
+      return parsed;
+    };
+    const seconds = toPositiveInt(mm) * 60 + toPositiveInt(ss);
+
+    try {
+      const target = new URL(video.source);
+      target.searchParams.set("t", seconds.toString());
+      window.open(target.toString(), "_blank");
+      return;
+    } catch (err) {
+      console.warn("[detail] invalid video source, fallback to string concat", err);
+    }
+
+    const separator = video.source.includes("?") ? "&" : "?";
+    window.open(`${video.source}${separator}t=${seconds}`, "_blank");
   };
 
   return (

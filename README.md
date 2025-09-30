@@ -68,11 +68,11 @@ npm run dev
 
 ### 环境变量（.env.local）
 ```bash
-NEXT_PUBLIC_AI_API_KEY=你的火山方舟APIKey
-NEXT_PUBLIC_AI_API_ENDPOINT=https://ark.cn-beijing.volces.com/api/v3/chat/completions
-NEXT_PUBLIC_AI_MODEL=doubao-1.5-vision-pro-32k
+AI_API_KEY=你的火山方舟APIKey # 仅服务器可见
+AI_API_ENDPOINT=https://ark.cn-beijing.volces.com/api/v3/chat/completions
+AI_MODEL=doubao-1.5-vision-pro-32k
 ```
-说明：未配置 `API_KEY` 或 `API_ENDPOINT` 时，后端 `/api/ai-summary` 会返回示例结果；前端也会在失败时回退占位内容，保证演示可用性。
+说明：这些变量不会被注入前端 Bundle。未配置 `API_KEY` 或 `API_ENDPOINT` 时，后端 `/api/ai-summary` 会返回示例结果；前端也会在失败时回退占位内容，保证演示可用性。
 
 ## AI 接入与“视频理解”注意事项（重要）
 - 后端 `/api/ai-summary` 遵循 Doubao 的“视频理解”输入：
@@ -96,7 +96,7 @@ NEXT_PUBLIC_AI_MODEL=doubao-1.5-vision-pro-32k
 - 未配置 API 或请求失败时，前后端均回退到示例内容，保证页面可用性。
 
 ## 关键代码
-- AI 配置：`config/aiConfig.ts`
+- AI 配置：`config/aiConfig.ts`（使用服务器专用环境变量）
 - 服务端视频理解代理：`pages/api/ai-summary.ts`
 - 前端调用（视频 URL → 笔记）：`services/ai.ts` 的 `generateSummaryFromVideo()`
 - 文本摘要调用：`services/ai.ts` 的 `generateSummary()`
