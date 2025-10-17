@@ -1,31 +1,56 @@
 import type { NextApiRequest, NextApiResponse } from "next";
 import axios from "axios";
 import { AI_CONFIG } from "@/config/aiConfig";
+import { fetchBilibiliTranscript } from "@/lib/bilibiliTranscript";
+import {
+  MOCK_SUMMARY,
+  isAiServerConfigured,
+  summarizeTranscript,
+} from "@/lib/aiServer";
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   if (req.method !== "POST") return res.status(405).json({ error: "Method not allowed" });
   const { videoUrl, promptTemplate } = req.body || {};
 
   if (!videoUrl) return res.status(400).json({ error: "Missing videoUrl" });
-  // 火山方舟视频理解需要可直接拉取的视频直链（如 mp4/m3u8），B 站网页链接通常不可直接读取
-  if (/bilibili\.com/i.test(String(videoUrl))) {
-    return res.status(400).json({
-      error: "该链接不是视频直链。请提供可直接访问的 mp4/m3u8 链接，或先将视频转存到可公开访问的对象存储后再试。"
-    });
-  }
-  if (!AI_CONFIG.API_KEY || !AI_CONFIG.API_ENDPOINT) return res.status(200).json({
-    result: {
-      title: "AI 摘要 · 示例",
-      tags: ["AI 摘要"],
-      materials: [],
-      steps: [
-        { time: "00:05", desc: "提炼主题" },
-        { time: "00:18", desc: "列出要点" },
-        { time: "00:40", desc: "给出操作步骤" }
-      ],
-      notes: ["该摘要为占位内容，接入真实 API 后可替换"],
+  const isBilibili = /bilibili\.com/i.test(String(videoUrl));
+
+  if (isBilibili) {
+    try {
+      const transcript = await fetchBilibiliTranscript(videoUrl);
+
+      if (!isAiServerConfigured()) {
+        console.warn("[api/ai-summary] AI 配置缺失，返回 mock 摘要");
+        return res.status(200).json({
+          result: MOCK_SUMMARY,
+          meta: { transcriptSource: transcript.source, bv: transcript.bv },
+        });
+      }
+
+      const summary = await summarizeTranscript({
+        transcript: transcript.text,
+        promptTemplate,
+      });
+
+      return res.status(200).json({
+        result: summary,
+        meta: { transcriptSource: transcript.source, bv: transcript.bv },
+      });
+    } catch (error) {
+      console.error(
+        "[api/ai-summary] B 站字幕或摘要处理失败:",
+        (error as Error)?.message || error,
+      );
+      return res.status(400).json({
+        error:
+          "暂时无法获取该 B 站视频的字幕或生成摘要，请稍后再试，或提供可直接拉取的视频链接。",
+      });
     }
-  });
+  }
+  if (!AI_CONFIG.API_KEY || !AI_CONFIG.API_ENDPOINT)
+    return res.status(200).json({
+      result: MOCK_SUMMARY,
+    });
 
   const prompt = promptTemplate || `你是视频理解专家。请基于整段视频内容完成如下任务：\n- 提炼视频主题（<=200字）\n- 列出关键标签（3-8个）\n- 给出关键材料或工具（如涉及）\n- 输出步骤要点（数组，每项含 {time, desc}，time 为 00:00 或 mm:ss）\n- 补充注意事项（数组）\n\n请输出严格 JSON，字段为: title, tags, materials, steps, notes；steps 为 {time, desc} 数组。`;
 
