@@ -41,8 +41,8 @@ bilibili-knowledge-base/
 ├─ lib/                  # 辅助库（AI、bilibili 等）
 ├─ pages/                # Next.js 页面与 API 路由
 │  ├─ api/
-│  │  ├─ ai-summary.ts   # 服务端代理：视频理解 → 结构化 JSON
-│  │  ├─ bili-info.ts    # 解析/mock B 站视频基础信息
+│  │  ├─ ai-summary.ts   # 服务端代理：B 站字幕抽取 + 结构化摘要 / 视频直链理解
+│  │  ├─ bili-info.ts    # 解析 B 站视频基础信息（标题/封面/UP 主）
 │  │  └─ bili.ts         # 示例 API（mock）
 │  ├─ index.tsx          # 输入视频链接，生成笔记
 │  ├─ library.tsx        # 知识库视图
@@ -75,25 +75,21 @@ NEXT_PUBLIC_AI_MODEL=doubao-1.5-vision-pro-32k
 说明：未配置 `API_KEY` 或 `API_ENDPOINT` 时，后端 `/api/ai-summary` 会返回示例结果；前端也会在失败时回退占位内容，保证演示可用性。
 
 ## AI 接入与“视频理解”注意事项（重要）
-- 后端 `/api/ai-summary` 遵循 Doubao 的“视频理解”输入：
-  - `messages[0].content` 包含：
-    - `{ type: "input_video", video_url: <直链> }`
-    - `{ type: "input_text", text: <提示词> }`
-  - `response_format: { type: "json_object" }` 强制返回结构化 JSON。
-- 根据官方文档，“视频理解”需要可直接拉取的媒体直链（mp4/m3u8）。普通 B 站网页链接（bilibili.com/*）不是直链，接口会返回 400 并提示原因。
-- 文档参考：[火山引擎 Doubao · 视频理解](https://www.volcengine.com/docs/82379/1362931#%E8%A7%86%E9%A2%91%E7%90%86%E8%A7%A3)
+- 对于包含 BV 号的 B 站链接，后端 `/api/ai-summary` 会：
+  1. 自动抓取视频字幕（优先中文），拼接为长文本；
+  2. 调用文本模型生成结构化 JSON 摘要；
+  3. 若字幕缺失或模型不可用，回退到内置 Mock。
+- 其它可直接访问的 mp4/m3u8 直链仍按 Doubao “视频理解”接口处理：
+  - `messages[0].content` 包含 `{ type: "input_video" }` 与 `{ type: "input_text" }`；
+  - `response_format: { type: "json_object" }` 强制返回结构化 JSON；
+  - 文档参考：[火山引擎 Doubao · 视频理解](https://www.volcengine.com/docs/82379/1362931#%E8%A7%86%E9%A2%91%E7%90%86%E8%A7%A3)。
 
 ### 如何处理 B 站链接
-1) 字幕优先（推荐、稳定）
-- 服务端通过 B 站接口获取字幕（需 WBI 签名与鉴权），拼接为 transcript；改走文本摘要（`services/ai.ts` 的 `generateSummary()`）。
-- 不在前端暴露签名逻辑与凭证。
-
-2) 服务端拉流转存（需合规评估）
-- 服务端拉取 B 站流并合并音视频，上传到对象存储（TOS/S3/OSS）拿到直链，再传给 Doubao。
-- 注意版权与平台协议，关注带宽/存储/转码成本与安全。
-
-3) Mock 演示
-- 未配置 API 或请求失败时，前后端均回退到示例内容，保证页面可用性。
+1) 直接粘贴 BV 链接即可：后端会尝试字幕抽取与总结。
+2) 若该视频没有字幕 / 需要更精细的多模态理解，可考虑：
+   - 拉流转存到对象存储，获得可公开访问的直链，再交给多模态模型；
+   - 或自行提供字幕文本并调用 `services/ai.ts` 中的 `generateSummary()`。
+3) Mock 演示：当 API Key 缺失或调用失败时，依旧返回示例摘要，保障演示流程。
 
 ## 关键代码
 - AI 配置：`config/aiConfig.ts`
@@ -105,15 +101,14 @@ NEXT_PUBLIC_AI_MODEL=doubao-1.5-vision-pro-32k
 ## 使用流程（本地）
 1. 运行 `npm run dev` 打开首页。
 2. 粘贴视频链接：
-   - 若为 mp4/m3u8 直链：直接走“视频理解”。
-   - 若为 B 站网页链接：当前会提示非直链（400）。你可以：
-     - 走 Mock 演示；
-     - 或按“字幕优先/拉流转存”方案改造后端。
+   - 含 BV 号的 B 站链接会自动抓取字幕并生成摘要；
+   - 其它 mp4/m3u8 直链则走“视频理解”多模态流程。
 3. 生成后跳转“知识库”查看卡片化笔记，可进入详情页继续查看。
 
 ## FAQ（常见问题）
-- 为什么 B 站链接会报错？
-  - 因为“视频理解”需要直链。B 站页面地址通常需要登录、签名与防盗链校验。
+- 为什么个别 B 站链接依旧无法生成？
+  - 可能该视频未提供字幕、字幕需要登录才能访问，或返回的是图片类弹幕。此时接口会提示错误。
+  - 你可以尝试手动下载字幕并调用 `generateSummary()`，或改用“视频直链”方案。
 - 没有 API Key 可以用吗？
   - 可以。本项目内置 Mock 以保证演示。
 - 返回 401/429/5xx 怎么办？

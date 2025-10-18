@@ -1,5 +1,6 @@
 import type { NextApiRequest, NextApiResponse } from "next";
 import axios from "axios";
+import { BILIBILI_HEADERS } from "@/lib/bilibili";
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   const { bv } = req.query;
@@ -8,18 +9,20 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   }
 
   try {
-    // 示例：调用某个可用的解析服务或你自建后端
-    // 注意：B 站官方开放 API 需要凭证/签名，这里不直接暴露。建议在服务端完成。
-    // const resp = await axios.get(`https://your-proxy.example.com/bili/info`, { params: { bv } });
-    // console.log("[api/bili-info] proxy response:", resp.data);
-    // return res.status(200).json(resp.data);
+    const resp = await axios.get("https://api.bilibili.com/x/web-interface/view", {
+      params: { bvid: bv },
+      headers: BILIBILI_HEADERS,
+    });
 
-    // 暂时返回 mock，并打印日志
-    console.log("[api/bili-info] using mock response for bv:", bv);
+    if (resp.data?.code !== 0 || !resp.data?.data) {
+      throw new Error(`unexpected response code: ${resp.data?.code}`);
+    }
+
+    const data = resp.data.data;
     return res.status(200).json({
-      title: `示例标题 - ${bv}`,
-      cover: "",
-      uploader: "示例UP主",
+      title: data.title ?? `示例标题 - ${bv}`,
+      cover: data.pic ?? "",
+      uploader: data.owner?.name ?? "未知UP主",
     });
   } catch (err: any) {
     console.warn("[api/bili-info] proxy failed:", err?.message || err);
@@ -29,4 +32,4 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       uploader: "示例UP主",
     });
   }
-} 
+}

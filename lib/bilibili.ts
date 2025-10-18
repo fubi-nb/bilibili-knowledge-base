@@ -1,9 +1,3 @@
-export type BilibiliInfo = {
-  title: string;
-  cover: string;
-  uploader: string;
-};
-
 export function extractBV(url: string): string | null {
   try {
     const u = new URL(url);
@@ -16,24 +10,9 @@ export function extractBV(url: string): string | null {
   }
 }
 
-export async function fetchBilibiliInfo(bv: string): Promise<BilibiliInfo> {
-  // 简化：调用公开解析服务或 B 站开放 API 的代理，这里先尝试一个示例 JSON 接口
-  // 若失败返回 mock
-  try {
-    // 这里使用一个不可用的占位符，真实项目应改为你自己的代理 API
-    const resp = await fetch(`/api/bili?bv=${encodeURIComponent(bv)}`);
-    if (!resp.ok) throw new Error("bad status");
-    const data = await resp.json();
-    return {
-      title: data.title ?? `Bilibili 视频 ${bv}`,
-      cover: data.cover ?? "",
-      uploader: data.uploader ?? "未知UP主",
-    };
-  } catch {
-    return {
-      title: `示例视频 ${bv}`,
-      cover: "",
-      uploader: "示例UP主",
-    };
-  }
-} 
+export const BILIBILI_HEADERS = {
+  "User-Agent":
+    "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36",
+  Referer: "https://www.bilibili.com",
+  Origin: "https://www.bilibili.com",
+};
