@@ -1,17 +1,9 @@
 import axios from "axios";
+import { extractBV as extractBVFromLib } from "@/lib/bilibili";
 
 export type BiliInfo = { title: string; cover: string; uploader: string };
 
-export function extractBV(url: string): string | null {
-  try {
-    const u = new URL(url);
-    const match = u.pathname.match(/BV[\w]+/i);
-    return match ? match[0] : null;
-  } catch {
-    const match = (url || "").match(/BV[\w]+/i);
-    return match ? match[0] : null;
-  }
-}
+export const extractBV = extractBVFromLib;
 
 export async function getBilibiliVideoInfo(bv: string | null): Promise<BiliInfo> {
   if (!bv) return { title: "", cover: "", uploader: "" };
@@ -23,4 +15,4 @@ export async function getBilibiliVideoInfo(bv: string | null): Promise<BiliInfo>
     console.warn("[bili-info] failed, fallback to mock:", err?.message || err);
     return { title: `示例标题 - ${bv}`, cover: "", uploader: "示例UP主" };
   }
-} 
+}
